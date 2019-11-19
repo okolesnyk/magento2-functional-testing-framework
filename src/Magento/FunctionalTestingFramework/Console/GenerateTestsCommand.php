@@ -196,15 +196,13 @@ class GenerateTestsCommand extends BaseGenerateCommand
 
         asort($moduleToVersion);
         if ($perModule) {
-            $total = array_sum($moduleToTotalTest);
-            $totalskip = array_sum($moduleToSkippedTest);
             print (PHP_EOL . PHP_EOL . "TESTS PER MODULE: VERSION|MODULE|UNSKIPPED|SKIPPED");
             foreach ($moduleToVersion as $module => $version) {
                 $skippedSet = 0;
                 if (isset($moduleToSkippedTest[$module])) {
                     $skippedSet = $moduleToSkippedTest[$module];
                 }
-                $adjustedTotal = $total - $skippedSet;
+                $adjustedTotal = $moduleToTotalTest[$module] - $skippedSet;
                 print (PHP_EOL . "$version|$module|$adjustedTotal|$skippedSet");
             }
         }
