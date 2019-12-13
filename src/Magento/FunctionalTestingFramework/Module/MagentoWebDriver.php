@@ -16,13 +16,17 @@ use Codeception\Exception\ModuleException;
 use Codeception\Util\Uri;
 use Magento\FunctionalTestingFramework\DataGenerator\Handlers\CredentialStore;
 use Magento\FunctionalTestingFramework\DataGenerator\Persist\Curl\WebapiExecutor;
+use Magento\FunctionalTestingFramework\Util\Path\UrlFormatter;
 use Magento\FunctionalTestingFramework\Util\Protocol\CurlInterface;
 use Magento\FunctionalTestingFramework\Util\ConfigSanitizerUtil;
 use Yandex\Allure\Adapter\AllureException;
 use Magento\FunctionalTestingFramework\Util\Protocol\CurlTransport;
-use Symfony\Component\Process\Process;
 use Yandex\Allure\Adapter\Support\AttachmentSupport;
 use Magento\FunctionalTestingFramework\Exceptions\TestFrameworkException;
+use Magento\FunctionalTestingFramework\Config\MftfApplicationConfig;
+use Facebook\WebDriver\Remote\RemoteWebDriver;
+use Facebook\WebDriver\Exception\WebDriverCurlException;
+use Magento\FunctionalTestingFramework\DataGenerator\Handlers\PersistedObjectHandler;
 
 /**
  * MagentoWebDriver module provides common Magento web actions through Selenium WebDriver.
@@ -43,6 +47,7 @@ use Magento\FunctionalTestingFramework\Exceptions\TestFrameworkException;
  * ```
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.ExcessivePublicCount)
  */
 class MagentoWebDriver extends WebDriver
 {
@@ -507,18 +512,44 @@ class MagentoWebDriver extends WebDriver
     /**
      * Takes given $command and executes it against bin/magento or custom exposed entrypoint. Returns command output.
      *
-     * @param string $command
-     * @param string $arguments
+     * @param string  $command
+     * @param integer $timeout
+     * @param string  $arguments
      * @return string
+     *
      * @throws TestFrameworkException
      */
-    public function magentoCLI($command, $arguments = null)
+    public function magentoCLI($command, $timeout = null, $arguments = null)
     {
-        try {
-            return $this->shellExecMagentoCLI($command, $arguments);
-        } catch (\Exception $exception) {
-            return $this->curlExecMagentoCLI($command, $arguments);
-        }
+        // Remove index.php if it's present in url
+        $baseUrl = rtrim(
+            str_replace('index.php', '', rtrim($this->config['url'], '/')),
+            '/'
+        );
+
+        $apiURL = UrlFormatter::format(
+            $baseUrl . '/' . ltrim(getenv('MAGENTO_CLI_COMMAND_PATH'), '/'),
+            false
+        );
+
+        $restExecutor = new WebapiExecutor();
+        $executor = new CurlTransport();
+        $executor->write(
+            $apiURL,
+            [
+                'token' => $restExecutor->getAuthToken(),
+                getenv('MAGENTO_CLI_COMMAND_PARAMETER') => $command,
+                'arguments' => $arguments,
+                'timeout'   => $timeout,
+            ],
+            CurlInterface::POST,
+            []
+        );
+        $response = $executor->read();
+        $restExecutor->close();
+        $executor->close();
+
+        return $response;
     }
 
     /**
@@ -667,17 +698,18 @@ class MagentoWebDriver extends WebDriver
      * The data is decrypted immediately prior to data creation to avoid exposure in console or log.
      *
      * @param string $command
+     * @param null   $timeout
      * @param null   $arguments
      * @throws TestFrameworkException
      * @return string
      */
-    public function magentoCLISecret($command, $arguments = null)
+    public function magentoCLISecret($command, $timeout = null, $arguments = null)
     {
         // to protect any secrets from being printed to console the values are executed only at the webdriver level as a
         // decrypted value
 
         $decryptedCommand = CredentialStore::getInstance()->decryptAllSecretsInString($command);
-        return $this->magentoCLI($decryptedCommand, $arguments);
+        return $this->magentoCLI($decryptedCommand, $timeout, $arguments);
     }
 
     /**
@@ -827,63 +859,116 @@ class MagentoWebDriver extends WebDriver
     }
 
     /**
-     * Takes given $command and executes it against bin/magento executable. Returns stdout output from the command.
+     * Create an entity
+     * TODO: move this function to MagentoActionProxies after MQE-1904
      *
-     * @param string $command
-     * @param string $arguments
-     *
-     * @throws \RuntimeException
-     * @return string
+     * @param string $key                 StepKey of the createData action.
+     * @param string $scope
+     * @param string $entity              Name of xml entity to create.
+     * @param array  $dependentObjectKeys StepKeys of other createData actions that are required.
+     * @param array  $overrideFields      Array of FieldName => Value of override fields.
+     * @param string $storeCode
+     * @return void
      */
-    private function shellExecMagentoCLI($command, $arguments): string
-    {
-        $php = PHP_BINDIR ? PHP_BINDIR . DIRECTORY_SEPARATOR. 'php' : 'php';
-        $binMagento = realpath(MAGENTO_BP . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'magento');
-        $command = $php . ' -f ' . $binMagento . ' ' . $command . ' ' . $arguments;
-        $process = new Process(escapeshellcmd($command), MAGENTO_BP);
-        $process->setIdleTimeout(60);
-        $process->setTimeout(0);
-        $exitCode = $process->run();
-        if ($exitCode !== 0) {
-            throw new \RuntimeException($process->getErrorOutput());
-        }
-
-        return $process->getOutput();
+    public function createEntity(
+        $key,
+        $scope,
+        $entity,
+        $dependentObjectKeys = [],
+        $overrideFields = [],
+        $storeCode = ''
+    ) {
+        PersistedObjectHandler::getInstance()->createEntity(
+            $key,
+            $scope,
+            $entity,
+            $dependentObjectKeys,
+            $overrideFields,
+            $storeCode
+        );
     }
 
     /**
-     * Takes given $command and executes it against exposed MTF CLI entry point. Returns response from server.
+     * Retrieves and updates a previously created entity
+     * TODO: move this function to MagentoActionProxies after MQE-1904
      *
-     * @param string $command
-     * @param string $arguments
+     * @param string $key                 StepKey of the createData action.
+     * @param string $scope
+     * @param string $updateEntity        Name of the static XML data to update the entity with.
+     * @param array  $dependentObjectKeys StepKeys of other createData actions that are required.
+     * @return void
+     */
+    public function updateEntity($key, $scope, $updateEntity, $dependentObjectKeys = [])
+    {
+        PersistedObjectHandler::getInstance()->updateEntity(
+            $key,
+            $scope,
+            $updateEntity,
+            $dependentObjectKeys
+        );
+    }
+
+    /**
+     * Performs GET on given entity and stores entity for use
+     * TODO: move this function to MagentoActionProxies after MQE-1904
+     *
+     * @param string  $key                 StepKey of getData action.
+     * @param string  $scope
+     * @param string  $entity              Name of XML static data to use.
+     * @param array   $dependentObjectKeys StepKeys of other createData actions that are required.
+     * @param string  $storeCode
+     * @param integer $index
+     * @return void
+     */
+    public function getEntity($key, $scope, $entity, $dependentObjectKeys = [], $storeCode = '', $index = null)
+    {
+        PersistedObjectHandler::getInstance()->getEntity(
+            $key,
+            $scope,
+            $entity,
+            $dependentObjectKeys,
+            $storeCode,
+            $index
+        );
+    }
+
+    /**
+     * Retrieves and deletes a previously created entity
+     * TODO: move this function to MagentoActionProxies after MQE-1904
+     *
+     * @param string $key   StepKey of the createData action.
+     * @param string $scope
+     * @return void
+     */
+    public function deleteEntity($key, $scope)
+    {
+        PersistedObjectHandler::getInstance()->deleteEntity($key, $scope);
+    }
+
+    /**
+     * Retrieves a field from an entity, according to key and scope given
+     * TODO: move this function to MagentoActionProxies after MQE-1904
+     *
+     * @param string $stepKey
+     * @param string $field
+     * @param string $scope
      * @return string
+     */
+    public function retrieveEntityField($stepKey, $field, $scope)
+    {
+        return PersistedObjectHandler::getInstance()->retrieveEntityField($stepKey, $field, $scope);
+    }
+
+    /**
+     * Get encrypted value by key
+     * TODO: move this function to MagentoActionProxies after MQE-1904
+     *
+     * @param string $key
+     * @return string|null
      * @throws TestFrameworkException
      */
-    private function curlExecMagentoCLI($command, $arguments): string
+    public function getSecret($key)
     {
-        // Remove index.php if it's present in url
-        $baseUrl = rtrim(
-            str_replace('index.php', '', rtrim($this->config['url'], '/')),
-            '/'
-        );
-        $apiURL = $baseUrl . '/' . ltrim(getenv('MAGENTO_CLI_COMMAND_PATH'), '/');
-
-        $restExecutor = new WebapiExecutor();
-        $executor = new CurlTransport();
-        $executor->write(
-            $apiURL,
-            [
-                'token' => $restExecutor->getAuthToken(),
-                getenv('MAGENTO_CLI_COMMAND_PARAMETER') => $command,
-                'arguments' => $arguments,
-            ],
-            CurlInterface::POST,
-            []
-        );
-        $response = $executor->read();
-        $restExecutor->close();
-        $executor->close();
-
-        return $response;
+        return CredentialStore::getInstance()->getSecret($key);
     }
 }
