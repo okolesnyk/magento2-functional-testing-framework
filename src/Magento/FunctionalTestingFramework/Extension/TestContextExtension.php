@@ -32,6 +32,8 @@ class TestContextExtension extends BaseExtension
      */
     public static $events;
 
+    public $currentTest;
+
     /**
      * Initialize local vars
      *
@@ -55,8 +57,9 @@ class TestContextExtension extends BaseExtension
      * @throws \Exception
      * @return void
      */
-    public function testStart()
+    public function testStart(\Codeception\Event\TestEvent $e)
     {
+        $this->currentTest = $e->getTest()->getMetadata()->getName();
         PersistedObjectHandler::getInstance()->clearHookObjects();
         PersistedObjectHandler::getInstance()->clearTestObjects();
     }
@@ -167,6 +170,8 @@ class TestContextExtension extends BaseExtension
      */
     public function beforeStep(\Codeception\Event\StepEvent $e)
     {
+        $this->getDriver()->setCookie("FUNCTIONAL_TEST_NAME", $this->currentTest);
+
         if ($this->pageChanged($e->getStep())) {
             $this->getDriver()->cleanJsError();
         }
