@@ -170,7 +170,11 @@ class TestContextExtension extends BaseExtension
      */
     public function beforeStep(\Codeception\Event\StepEvent $e)
     {
-        $this->getDriver()->setCookie("FUNCTIONAL_TEST_NAME", $this->currentTest);
+        try {
+            $this->getDriver()->executeJS("document.cookie = 'FUNCTIONAL_TEST_NAME={$this->currentTest};'");
+        } catch (\Exception $except) {
+            //do nothing
+        }
 
         if ($this->pageChanged($e->getStep())) {
             $this->getDriver()->cleanJsError();
