@@ -60,6 +60,15 @@ class TestContextExtension extends BaseExtension
     public function testStart(\Codeception\Event\TestEvent $e)
     {
         $this->currentTest = $e->getTest()->getMetadata()->getName();
+
+        $cURLConnection = curl_init();
+        curl_setopt_array($cURLConnection, [
+            CURLOPT_RETURNTRANSFER => 1,
+            CURLOPT_URL => getenv('MAGENTO_BASE_URL') . "/test.php?test=" . $this->currentTest,
+        ]);
+
+        $success = curl_exec($cURLConnection);
+        curl_close($cURLConnection);
         PersistedObjectHandler::getInstance()->clearHookObjects();
         PersistedObjectHandler::getInstance()->clearTestObjects();
     }
@@ -170,12 +179,6 @@ class TestContextExtension extends BaseExtension
      */
     public function beforeStep(\Codeception\Event\StepEvent $e)
     {
-        try {
-            $this->getDriver()->executeJS("document.cookie = 'FUNCTIONAL_TEST_NAME={$this->currentTest};'");
-        } catch (\Exception $except) {
-            //do nothing
-        }
-
         if ($this->pageChanged($e->getStep())) {
             $this->getDriver()->cleanJsError();
         }
