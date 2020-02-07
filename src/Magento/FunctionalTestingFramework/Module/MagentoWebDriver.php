@@ -601,6 +601,10 @@ class MagentoWebDriver extends WebDriver
      */
     private function getLastCronExecution(array $cronGroups = [])
     {
+        if (empty($this->cronExecution)) {
+            return 0;
+        }
+
         if (empty($cronGroups)) {
             return (int)max($this->cronExecution);
         }
@@ -769,6 +773,9 @@ class MagentoWebDriver extends WebDriver
         // decrypted value
 
         $decryptedValue = CredentialStore::getInstance()->decryptSecretValue($value);
+        if ($decryptedValue === false) {
+            throw new TestFrameworkException("\nFailed to decrypt value {$value} for field {$field}\n");
+        }
         $this->fillField($field, $decryptedValue);
     }
 
@@ -788,6 +795,9 @@ class MagentoWebDriver extends WebDriver
         // decrypted value
 
         $decryptedCommand = CredentialStore::getInstance()->decryptAllSecretsInString($command);
+        if ($decryptedCommand === false) {
+            throw new TestFrameworkException("\nFailed to decrypt magentoCLI command {$command}\n");
+        }
         return $this->magentoCLI($decryptedCommand, $timeout, $arguments);
     }
 
@@ -1054,7 +1064,7 @@ class MagentoWebDriver extends WebDriver
     /**
      * Waits proper amount of time to perform Cron execution
      *
-     * @param string  $cronGroups
+     * @param array   $cronGroups
      * @param integer $timeout
      * @param string  $arguments
      * @return string
