@@ -95,6 +95,14 @@ class SuiteGenerator
         $suites = $testManifest->getSuiteConfig();
 
         foreach ($suites as $suiteName => $suiteContent) {
+            if (empty($suiteContent)) {
+                LoggingUtil::getInstance()->getLogger(self::class)->notification(
+                    "Suite '" . $suiteName . "' contains no tests and won't be generated." . PHP_EOL,
+                    [],
+                    true
+                );
+                continue;
+            }
             $firstElement = array_values($suiteContent)[0];
 
             // if the first element is a string we know that we simply have an array of tests
@@ -178,12 +186,14 @@ class SuiteGenerator
     {
         $suiteRef = $originalSuiteName ?? $suiteName;
         $possibleTestRef = SuiteObjectHandler::getInstance()->getObject($suiteRef)->getTests();
-        $errorMsg = "Cannot reference tests whcih are not declared as part of suite.";
+        $errorMsg = "Cannot reference tests which are not declared as part of suite";
 
         $invalidTestRef = array_diff($testsReferenced, array_keys($possibleTestRef));
 
         if (!empty($invalidTestRef)) {
-            throw new TestReferenceException($errorMsg, ['suite' => $suiteRef, 'test' => $invalidTestRef]);
+            $testList = implode("\", \"", $invalidTestRef);
+            $fullError = $errorMsg . " (Suite: \"{$suiteRef}\" Tests: \"{$testList}\")";
+            throw new TestReferenceException($fullError, ['suite' => $suiteRef, 'test' => $invalidTestRef]);
         }
     }
 
