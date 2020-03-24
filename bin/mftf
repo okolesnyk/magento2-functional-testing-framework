@@ -27,11 +27,10 @@ try {
 
 
 try {
-    $version = json_decode(file_get_contents(FW_BP . DIRECTORY_SEPARATOR . 'composer.json'), true);
-    $version = $version['version'];
+    $composer = \Composer\Factory::create(new \Composer\IO\BufferIO(), FW_BP . DIRECTORY_SEPARATOR . 'composer.json');
     $application = new Symfony\Component\Console\Application();
     $application->setName('Magento Functional Testing Framework CLI');
-    $application->setVersion($version);
+    $application->setVersion($composer->getPackage()->getFullPrettyVersion());
     /** @var \Magento\FunctionalTestingFramework\Console\CommandListInterface $commandList */
     $commandList = new \Magento\FunctionalTestingFramework\Console\CommandList;
     foreach ($commandList->getCommands() as $command) {
