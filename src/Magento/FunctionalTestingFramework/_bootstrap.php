@@ -53,7 +53,7 @@ if (file_exists(ENV_FILE_PATH . '.env')) {
     defined('WAIT_TIMEOUT') || define('WAIT_TIMEOUT', 30);
     $env->setEnvironmentVariable('WAIT_TIMEOUT', WAIT_TIMEOUT);
 
-    defined('VERBOSE_ARTIFACTS') || define('VERBOSE_ARTIFACTS', false);
+    defined('VERBOSE_ARTIFACTS') || define('VERBOSE_ARTIFACTS', 'false');
     $env->setEnvironmentVariable('VERBOSE_ARTIFACTS', VERBOSE_ARTIFACTS);
 
     try {
