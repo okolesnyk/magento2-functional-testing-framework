@@ -39,13 +39,13 @@ vendor/bin/mftf generate:tests
 ### Generate tests by test name
 
 ```bash
-vendor/bin/mftf generate:tests AdminLoginTest StorefrontPersistedCustomerLoginTest
+vendor/bin/mftf generate:tests AdminLoginSuccessfulTest StorefrontPersistedCustomerLoginTest
 ```
 
 ### Generate test by test and suite name
 
 ```bash
-vendor/bin/mftf generate:tests LoginSuite:AdminLoginTest
+vendor/bin/mftf generate:tests WYSIWYGDisabledSuite:AdminCMSPageCreatePageTest
 ```
 
 ### Generate and run the tests for a specified group
@@ -59,18 +59,18 @@ This command cleans up the previously generated tests; generates and runs tests 
 ### Generate and run particular tests
 
 ```bash
-vendor/bin/mftf run:test AdminLoginTest StorefrontPersistedCustomerLoginTest -r
+vendor/bin/mftf run:test AdminLoginSuccessfulTest StorefrontPersistedCustomerLoginTest -r
 ```
 
-This command cleans up the previously generated tests; generates and runs the `LoginAsAdminTest` and `LoginAsCustomerTest` tests.
+This command cleans up the previously generated tests; generates and runs the `AdminLoginSuccessfulTest` and `StorefrontPersistedCustomerLoginTest` tests.
 
 ### Generate and run particular test in a specific suite's context
 
 ```bash
-vendor/bin/mftf run:test LoginSuite:AdminLoginTest -r
+vendor/bin/mftf run:test WYSIWYGDisabledSuite:AdminCMSPageCreatePageTest -r
 ```
 
-This command cleans up previously generated tests; generates and run `AdminLoginTest` within the context of the `LoginSuite`.
+This command cleans up previously generated tests; generates and run `AdminCMSPageCreatePageTest` within the context of the `WYSIWYGDisabledSuite`.
 
 ### Generate and run a testManifest.txt file
 
@@ -339,10 +339,10 @@ vendor/bin/mftf run:test [--skip-generate|--remove] [--] <name1> [<name2>]
 
 #### Examples
 
-Generate the `LoginCustomerTest` and `StorefrontCreateCustomerTest` tests from XML and execute all the generated tests:
+Generate the `StorefrontCreateCustomerTest` and `AdminDeleteCustomerTest` tests from XML and execute all the generated tests:
 
 ```bash
-vendor/bin/mftf run:test LoginCustomerTest StorefrontCreateCustomerTest
+vendor/bin/mftf run:test StorefrontCreateCustomerTest AdminDeleteCustomerTest
 ```
 
 ### `run:manifest`
@@ -362,8 +362,8 @@ vendor/bin/mftf run:manifest path/to/your/testManifest.txt
 Each line should contain either: one test path or one group (-g) reference.
 
 ```
-tests/functional/tests/MFTF/_generated/default/AdminLoginTestCest.php
--g PaypalTestSuite
+tests/functional/tests/MFTF/_generated/default/AdminLoginSuccessfulTestCest.php
+-g InContextPaypalSuite
 tests/functional/tests/MFTF/_generated/default/SomeOtherTestCest.php
 tests/functional/tests/MFTF/_generated/default/ThirdTestCest.php
 -g SomeOtherSuite
@@ -502,10 +502,7 @@ vendor/bin/mftf static-checks testDependencies actionGroupArguments
          
 #### Defining ruleset
 
-The `static-checks` command will look for a `staticRuleset.json` file under either:
-
-*  `dev/tests/acceptance/staticRuleset.json`, if embedded with Magento2
-*  `dev/staticRuleset.json`, if standalone
+The `static-checks` command will look for a `staticRuleset.json` file under `dev/tests/acceptance/staticRuleset.json` of the magento2 installation.
 
 This file works as the default configuration to easily allow for the integration of `static-checks` in a CI environment.
 Currently, the ruleset only defines the tests to run. Here is an example of the expected format:

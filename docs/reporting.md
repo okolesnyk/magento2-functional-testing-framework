@@ -57,19 +57,20 @@ The general information can be useful for MFTF contributors, but can be ignored 
 Let's consider the general part of the following test execution report:
 
 ```terminal
-==== Redirecting to Composer-installed version in vendor/codeception ====
-Codeception PHP Testing Framework v2.3.9
-Powered by PHPUnit 6.5.13 by Sebastian Bergmann and contributors.
+Generate Tests Command Run
+Codeception PHP Testing Framework v4.1.4
+Powered by PHPUnit 9.1.3 by Sebastian Bergmann and contributors.
+Running with seed: 
 
 Magento\FunctionalTestingFramework.functional Tests (2) ------------------------
-Modules: \Magento\FunctionalTestingFramework\Module\MagentoWebDriver, \Magento\FunctionalTestingFramework\Helper\Acceptance, \Magento\FunctionalTestingFramework\Helper\MagentoFakerData, \Magento\FunctionalTestingFramework\Module\MagentoRestDriver, PhpBrowser, \Magento\FunctionalTestingFramework\Module\MagentoSequence, \Magento\FunctionalTes
+Modules: \Magento\FunctionalTestingFramework\Module\MagentoWebDriver, \Magento\FunctionalTestingFramework\Module\MagentoSequence, \Magento\FunctionalTestingFramework\Module\MagentoAssert, \Magento\FunctionalTestingFramework\Module\MagentoActionProxies, Asserts, \Magento\FunctionalTestingFramework\Helper\HelperContainer
 ```
 
-After the test generation command (mentioned in the previous section), MFTF delegates control to the `vendor/codeception` tool, which is the `Codeception PHP Testing Framework` of version `2.3.9` that uses `PHPUnit` of version `6.5.13`.
+After the test generation command (mentioned in the previous section), MFTF delegates control to the `vendor/codeception` tool, which is the `Codeception PHP Testing Framework` of version `4.1.4` that uses `PHPUnit` of version `9.1.3`.
 
 The tool runs `2 Tests` using the configuration defined in the `functional` suite under the `Magento\FunctionalTestingFramework` namespace.
 The corresponding configuration file is `acceptance/tests/functional.suite.yml`.
-It enables `Modules: \Magento\FunctionalTestingFramework\Module\MagentoWebDriver, \Magento\FunctionalTestingFramework\Helper\Acceptance, \Magento\FunctionalTestingFramework\Helper\MagentoFakerData, \Magento\FunctionalTestingFramework\Module\MagentoRestDriver, PhpBrowser, \Magento\FunctionalTestingFramework\Module\MagentoSequence, ...`
+It enables `Modules: \Magento\FunctionalTestingFramework\Module\MagentoWebDriver, \Magento\FunctionalTestingFramework\Module\MagentoSequence, \Magento\FunctionalTestingFramework\Module\MagentoAssert, \Magento\FunctionalTestingFramework\Module\MagentoActionProxies, Asserts, \Magento\FunctionalTestingFramework\Helper\HelperContainer,..`
 
 #### Passed tests
 
@@ -324,8 +325,7 @@ And if you run the `open` command with no arguments while you are in the same di
 allure open
 ```
 
-Allure would attempt to open a generated report at the `magento2/allure-report/` directory.'
-%}
+Allure would attempt to open a generated report at the `magento2/allure-report/` directory.
 
 To clean up existing reports before generation (for example after getting new results), use the `--clean` flag:
 

@@ -1,6 +1,6 @@
 # Merging
 
-The MFTF allows you to merge test components defined in XML files, such as:
+MFTF allows you to merge test components defined in XML files, such as:
 
 -  [`<tests>`][]
 -  [`<pages>`][]
@@ -20,7 +20,7 @@ For example:
 
 -  All tests with `<test name="SampleTest>` will be merged into one.
 -  All pages with `<page name="SamplePage>` will be merged into one.
--  All sections with `<section name="SampleAction">` will be merged into one.
+-  All sections with `<section name="SampleSection">` will be merged into one.
 -  All data entities with `<entity name="sampleData" type="sample">` will be merged into one.
 -  All action groups with `<actionGroup name="selectNotLoggedInCustomerGroup">` will be merged into one.
 
@@ -39,7 +39,7 @@ This makes it easier to search later on.
 ## Add a test
 
 You cannot add another [`<test>`][tests] using merging functionality.
-To add a `<test>`, create a new `*Test.xml` file or add a `<test>` node to an existing `*Test.xml` file.
+To add a `<test>`, create a new `*Test.xml` file.
 
 ## Remove a test
 
@@ -473,7 +473,7 @@ Update `username` in the `AdminLoginFormSection` (the `.../Backend/Section/Admin
 </sections>
 ```
 
-Create the `.../FooBackend/Section/AdminLoginFormSection.xml` file:
+Create `.../FooBackend/Section/AdminLoginFormSection.xml` file:
 
 ```xml
 <sections ...>
@@ -483,7 +483,7 @@ Create the `.../FooBackend/Section/AdminLoginFormSection.xml` file:
 </sections>
 ```
 
-The `AdminLoginFormSection` result corresponds to:
+`AdminLoginFormSection` result corresponds to:
 
 ```xml
 <section name="AdminLoginFormSection">
@@ -502,8 +502,8 @@ Entities and data with the same _file name_, _entity name and type_, and _data k
 
 ### Add data
 
-**Use case**: The `FooSample` module extends the `Sample` module and requires a new data item `thirdField` in the `_defaultSample` entity.
-Add `<data key="thirdField">field3</data>` to the `_defaultSample` (the `.../Sample/Data/SampleData.xml` file):
+**Use case**: `FooSample` module extends `Sample` module and requires a new data item `thirdField` in `_defaultSample` entity.
+Add `<data key="thirdField">field3</data>` to `_defaultSample` (the `.../Sample/Data/SampleData.xml` file):
 
 ```xml
 <entities ...>
@@ -514,7 +514,7 @@ Add `<data key="thirdField">field3</data>` to the `_defaultSample` (the `.../Sam
 </entities>
 ```
 
-Create the `.../FooSample/Data/SampleData.xml` file:
+Create `.../FooSample/Data/SampleData.xml` file:
 
 ```xml
 <entities ...>
@@ -524,7 +524,7 @@ Create the `.../FooSample/Data/SampleData.xml` file:
 </entities>
 ```
 
-The `_defaultSample` result corresponds to:
+`_defaultSample` result corresponds to:
 
 ```xml
 <entity name="_defaultSample" type="testData">
