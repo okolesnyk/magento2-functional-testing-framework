@@ -1182,12 +1182,15 @@ class MagentoWebDriver extends WebDriver
     {
         $result = null;
         $finder = new Finder();
-        $finder->files()->in(FilePathFormatter::format(MAGENTO_BP) . self::MAGENTO_BACKUP_DIR)
-            ->name($pattern)->notName($pattern . 'copy')->sortByAccessedTime()->reverseSorting();
-        $files = iterator_to_array($finder, false);
-        if (!empty($files)) {
-            $result = basename($files[0]);
+        if (file_exists(FilePathFormatter::format(MAGENTO_BP) . self::MAGENTO_BACKUP_DIR)) {
+            $finder->files()->in(FilePathFormatter::format(MAGENTO_BP) . self::MAGENTO_BACKUP_DIR)
+                ->name($pattern)->notName($pattern . 'copy')->sortByAccessedTime()->reverseSorting();
+            $files = iterator_to_array($finder, false);
+            if (!empty($files)) {
+                $result = basename($files[0]);
+            }
         }
+
         return $result;
     }
 }
