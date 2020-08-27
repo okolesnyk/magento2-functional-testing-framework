@@ -46,10 +46,19 @@ class TestHookObjectExtractor extends BaseObjectExtractor
             self::NODE_NAME
         );
 
+        $actions = $this->actionObjectExtractor->extractActions($hookActions);
+
+        if ($hookType === 'after' && getenv('ROLLBACK') === 'PER_TEST') {
+            $actions = array_merge(
+                $actions,
+                $this->getRollbackActions(TestObjectExtractor::TEST_AFTER_HOOK)
+            );
+        }
+
         $hook = new TestHookObject(
             $hookType,
             $parentName,
-            $this->actionObjectExtractor->extractActions($hookActions)
+            $actions
         );
 
         return $hook;
@@ -57,7 +66,7 @@ class TestHookObjectExtractor extends BaseObjectExtractor
 
     /**
      * Creates the default failed hook object with a single saveScreenshot action.
-     * And a pause action when ENABLE_PAUSE is set to true.
+     * And a pause action when ENABLE_PAUSE is set to true, and etc
      *
      * @param string $parentName
      * @return TestHookObject
@@ -72,6 +81,12 @@ class TestHookObjectExtractor extends BaseObjectExtractor
                 [ActionObject::PAUSE_ACTION_INTERNAL_ATTRIBUTE => true]
             );
         }
+        if (getenv('ROLLBACK') === 'ON_FAILURE') {
+            $defaultSteps = array_merge(
+                $defaultSteps,
+                $this->getRollbackActions(TestObjectExtractor::TEST_FAILED_HOOK)
+            );
+        }
 
         $hook = new TestHookObject(
             TestObjectExtractor::TEST_FAILED_HOOK,
@@ -80,5 +95,50 @@ class TestHookObjectExtractor extends BaseObjectExtractor
         );
 
         return $hook;
+    }
+
+    /**
+     * Creates the default after hook object
+     *
+     * @param string $parentName
+     * @return TestHookObject|null
+     */
+    public function createDefaultAfterHook($parentName)
+    {
+        $hook = null;
+
+        if (getenv('ROLLBACK') === 'PER_TEST') {
+            $actions = $this->getRollbackActions(TestObjectExtractor::TEST_AFTER_HOOK);
+
+            $hook = new TestHookObject(
+                TestObjectExtractor::TEST_AFTER_HOOK,
+                $parentName,
+                $actions
+            );
+        }
+
+        return $hook;
+    }
+
+    /**
+     * Rollback Actions
+     *
+     * @param string $hookType
+     * @return ActionObject[]
+     */
+    private function getRollbackActions($hookType)
+    {
+        $actions['rollbackMedia' . ucfirst($hookType)] = new ActionObject(
+            'rollbackMedia' . ucfirst($hookType),
+            'mediaRollBack',
+            []
+        );
+        $actions['rollbackDB' . ucfirst($hookType)] = new ActionObject(
+            'rollbackDB' . ucfirst($hookType),
+            'dbRollBack',
+            []
+        );
+
+        return $actions;
     }
 }

@@ -160,12 +160,17 @@ class TestObjectExtractor extends BaseObjectExtractor
                 'after',
                 $testData[self::TEST_AFTER_HOOK]
             );
-
-            // extract failed
-            $testHooks[self::TEST_FAILED_HOOK] = $this->testHookObjectExtractor->createDefaultFailedHook(
-                $testData[self::NAME]
-            );
+        } else {
+            $defaultAfterHook = $this->testHookObjectExtractor->createDefaultAfterHook($testData[self::NAME]);
+            if ($defaultAfterHook) {
+                $testHooks[self::TEST_AFTER_HOOK] = $defaultAfterHook;
+            }
         }
+
+        // extract failed
+        $testHooks[self::TEST_FAILED_HOOK] = $this->testHookObjectExtractor->createDefaultFailedHook(
+            $testData[self::NAME]
+        );
 
         if (!empty($testData[self::OBJ_DEPRECATED])) {
             $testAnnotations[self::OBJ_DEPRECATED] = $testData[self::OBJ_DEPRECATED];

@@ -21,13 +21,14 @@ use Magento\FunctionalTestingFramework\DataTransport\Auth\WebApiAuth;
 use Magento\FunctionalTestingFramework\DataTransport\Auth\Tfa\OTP;
 use Magento\FunctionalTestingFramework\DataTransport\Protocol\CurlInterface;
 use Magento\FunctionalTestingFramework\DataGenerator\Handlers\CredentialStore;
+use Magento\FunctionalTestingFramework\Util\Path\FilePathFormatter;
 use Magento\FunctionalTestingFramework\Util\Path\UrlFormatter;
 use Magento\FunctionalTestingFramework\Util\ConfigSanitizerUtil;
 use Yandex\Allure\Adapter\AllureException;
 use Magento\FunctionalTestingFramework\DataTransport\Protocol\CurlTransport;
 use Yandex\Allure\Adapter\Support\AttachmentSupport;
 use Magento\FunctionalTestingFramework\Exceptions\TestFrameworkException;
-use Magento\FunctionalTestingFramework\DataGenerator\Handlers\PersistedObjectHandler;
+use Symfony\Component\Finder\Finder;
 
 /**
  * MagentoWebDriver module provides common Magento web actions through Selenium WebDriver.
@@ -60,6 +61,7 @@ class MagentoWebDriver extends WebDriver
 
     const MAGENTO_CRON_INTERVAL = 60;
     const MAGENTO_CRON_COMMAND = 'cron:run';
+    const MAGENTO_BACKUP_DIR = 'var/backups/';
 
     /**
      * List of known magento loading masks by selector
@@ -136,16 +138,23 @@ class MagentoWebDriver extends WebDriver
      */
     private $cronExecution = [];
 
+    public static $initDB = null;
+
+    public static $initMedia = null;
+
     /**
      * Sanitizes config, then initializes using parent.
      *
      * @return void
+     * @throws TestFrameworkException
      */
     public function _initialize()
     {
         $this->config = ConfigSanitizerUtil::sanitizeWebDriverConfig($this->config);
         parent::_initialize();
         $this->cleanJsError();
+        $this->nonGreedyDBBackup();
+        $this->nonGreedyMediaBackup();
     }
 
     /**
@@ -1048,5 +1057,137 @@ class MagentoWebDriver extends WebDriver
         }
 
         $this->codeceptPause();
+    }
+
+    //TODO separate console command to create and delete backup files?
+
+    /**
+     * Backup Magento DB
+     *
+     * @return string
+     * @throws TestFrameworkException
+     */
+    public function nonGreedyDBBackup()
+    {
+        if (self::$initDB === null) {
+            $filename = $this->getLatestMagentoBackupFileFromFileSystem('*_db.sql');
+            if ($filename) {
+                self::$initDB = $filename;
+            } else {
+                $this->magentoCLI("config:set system/backup/functionality_enabled 1", 60);
+                $this->magentoCLI("setup:backup --db", 120);
+
+                $filename = $this->getLatestMagentoBackupFileFromFileSystem('*_db.sql');
+                if ($filename) {
+                    self::$initDB = $filename;
+                    $srcFile = FilePathFormatter::format(MAGENTO_BP) . self::MAGENTO_BACKUP_DIR . self::$initDB;
+                    $dstFile = $srcFile . '.copy';
+                    copy($srcFile, $dstFile);
+                } else {
+                    throw new TestFrameworkException('Failed to create Magento DB Backup');
+                }
+            }
+        }
+
+        return self::$initDB;
+    }
+
+    /**
+     * Backup Magento Media
+     *
+     * @return string
+     * @throws TestFrameworkException
+     */
+    public function nonGreedyMediaBackup()
+    {
+        if (self::$initMedia === null) {
+            $filename = $this->getLatestMagentoBackupFileFromFileSystem('*_media.tgz');
+            if ($filename) {
+                self::$initMedia = $filename;
+            } else {
+                $this->magentoCLI("config:set system/backup/functionality_enabled 1", 60);
+                $this->magentoCLI("setup:backup --media", 120);
+
+                $filename = $this->getLatestMagentoBackupFileFromFileSystem('*_media.tgz');
+                if ($filename) {
+                    self::$initMedia = $filename;
+                    $srcFile = FilePathFormatter::format(MAGENTO_BP) . self::MAGENTO_BACKUP_DIR . self::$initMedia;
+                    $dstFile = $srcFile . '.copy';
+                    copy($srcFile, $dstFile);
+                } else {
+                    throw new TestFrameworkException('Failed to create Magento Media Backup');
+                }
+            }
+        }
+
+        return self::$initMedia;
+    }
+
+    /**
+     * Rollback Magento DB
+     *
+     * @return string
+     * @throws TestFrameworkException
+     */
+    public function dbRollBack()
+    {
+        if (self::$initDB === null) {
+            $filename = $this->getLatestMagentoBackupFileFromFileSystem('*_db.sql');
+            if ($filename) {
+                self::$initDB = $filename;
+            } else {
+                throw new TestFrameworkException('No backup DB file available to roll back.');
+            }
+        }
+
+        $result = $this->magentoCLI("setup:rollback -d " . self::$initDB . " -n", 180);
+        $srcFile = FilePathFormatter::format(MAGENTO_BP) . self::MAGENTO_BACKUP_DIR . self::$initDB;
+        $dstFile = $srcFile . '.copy';
+        copy($dstFile, $srcFile);
+        return $result;
+    }
+
+    /**
+     * Rollback Magento DB
+     *
+     * @return string
+     * @throws TestFrameworkException
+     */
+    public function mediaRollBack()
+    {
+        if (self::$initMedia === null) {
+            $filename = $this->getLatestMagentoBackupFileFromFileSystem('*_media.tgz');
+            if ($filename) {
+                self::$initMedia = $filename;
+            } else {
+                throw new TestFrameworkException('No backup media file available to roll back.');
+            }
+        }
+
+        $result = $this->magentoCLI("setup:rollback -m " . self::$initMedia . " -n", 180);
+        $srcFile = FilePathFormatter::format(MAGENTO_BP) . self::MAGENTO_BACKUP_DIR . self::$initMedia;
+        $dstFile = $srcFile . '.copy';
+        copy($dstFile, $srcFile);
+        return $result;
+    }
+
+    /**
+     * Return latest Magento backup file name from file system
+     *
+     * @param string $pattern
+     * @return string|null
+     * @throws TestFrameworkException
+     */
+    private function getLatestMagentoBackupFileFromFileSystem($pattern)
+    {
+        $result = null;
+        $finder = new Finder();
+        $finder->files()->in(FilePathFormatter::format(MAGENTO_BP) . self::MAGENTO_BACKUP_DIR)
+            ->name($pattern)->notName($pattern . 'copy')->sortByAccessedTime()->reverseSorting();
+        $files = iterator_to_array($finder, false);
+        if (!empty($files)) {
+            $result = basename($files[0]);
+        }
+        return $result;
     }
 }
