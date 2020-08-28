@@ -49,10 +49,7 @@ class TestHookObjectExtractor extends BaseObjectExtractor
         $actions = $this->actionObjectExtractor->extractActions($hookActions);
 
         if ($hookType === 'after' && getenv('ROLLBACK') === 'PER_TEST') {
-            $actions = array_merge(
-                $actions,
-                $this->getRollbackActions(TestObjectExtractor::TEST_AFTER_HOOK)
-            );
+            $actions = $this->getRollbackActions(TestObjectExtractor::TEST_AFTER_HOOK);
         }
 
         $hook = new TestHookObject(
