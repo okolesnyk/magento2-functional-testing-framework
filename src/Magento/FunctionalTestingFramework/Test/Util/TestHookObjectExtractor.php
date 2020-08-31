@@ -130,13 +130,13 @@ class TestHookObjectExtractor extends BaseObjectExtractor
     {
         $actions['rollbackMedia' . ucfirst($hookType)] = new ActionObject(
             'rollbackMedia' . ucfirst($hookType),
-            'mediaRollBack',
-            []
+            'rollback',
+            [ActionObject::ROLLBACK_ACTION_INTERNAL_ATTRIBUTE => 'media']
         );
         $actions['rollbackDB' . ucfirst($hookType)] = new ActionObject(
             'rollbackDB' . ucfirst($hookType),
-            'dbRollBack',
-            []
+            'rollback',
+            [ActionObject::ROLLBACK_ACTION_INTERNAL_ATTRIBUTE => 'db']
         );
 
         return $actions;

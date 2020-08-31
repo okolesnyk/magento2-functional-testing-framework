@@ -78,6 +78,7 @@ class ActionObject
     const ACTION_TYPE_HELPER = 'helper';
     const INVISIBLE_STEP_ACTIONS = ['retrieveEntityField', 'getSecret'];
     const PAUSE_ACTION_INTERNAL_ATTRIBUTE = 'pauseOnFail';
+    const ROLLBACK_ACTION_INTERNAL_ATTRIBUTE = 'type';
 
     /**
      * The unique identifier for the action
