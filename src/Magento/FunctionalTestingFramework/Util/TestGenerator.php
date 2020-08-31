@@ -1442,14 +1442,18 @@ class TestGenerator
                     $testSteps .= $dateGenerateCode;
                     break;
                 case "pause":
-                    $pauseAttr =  $actionObject->getCustomActionAttributes(
-                        ActionObject::PAUSE_ACTION_INTERNAL_ATTRIBUTE
-                    );
-                    if ($pauseAttr) {
+                    if (isset($customActionAttributes[ActionObject::PAUSE_ACTION_INTERNAL_ATTRIBUTE])) {
+                        $pauseAttr = $customActionAttributes[ActionObject::PAUSE_ACTION_INTERNAL_ATTRIBUTE];
+                    }
+                    if (isset($pauseAttr) && $pauseAttr) {
                         $testSteps .= sprintf("\t\t$%s->%s(%s);", $actor, $actionObject->getType(), 'true');
                     } else {
                         $testSteps .= sprintf("\t\t$%s->%s();", $actor, $actionObject->getType());
                     }
+                    break;
+                case "rollback":
+                    $rbAttr = $customActionAttributes[ActionObject::ROLLBACK_ACTION_INTERNAL_ATTRIBUTE];
+                    $testSteps .= sprintf("\t\t$%s->%s(\"%s\");", $actor, $actionObject->getType(), $rbAttr);
                     break;
                 case "comment":
                     $input = $input === null ? strtr($value, ['$' => '\$', '{' => '\{', '}' => '\}']) : $input;
