@@ -37,20 +37,17 @@ jobs:
 
       - name: Run tests
         run: vendor/bin/phpunit --configuration dev/tests/phpunit.xml --testsuite unit --coverage-clover clover.xml
-      
-      - name: Monitor coverage
-        uses: slavcodev/coverage-monitor-action@1.1.0
-        with:
-          github_token: ${{ secrets.CLOVER }}
-          clover_file: "clover.xml"
-          threshold_alert: 10
-          threshold_warning: 20
-          
+
       - name: ReportGenerator
         uses: danielpalme/ReportGenerator-GitHub-Action@4.6.5
         with:
           reports: "clover.xml"
-          
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage
+          path: coveragereport/index.html
+
   verification-tests:
     name: Verification Tests
     runs-on: ubuntu-latest
