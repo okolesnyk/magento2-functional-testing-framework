@@ -39,7 +39,7 @@ jobs:
         run: vendor/bin/phpunit --configuration dev/tests/phpunit.xml --testsuite unit --coverage-clover clover.xml
 
       - name: Monitor coverage
-        if: github.event_name == pull_request
+        if: github.event_name == 'pull_request'
         uses: slavcodev/coverage-monitor-action@1.1.0
         with:
           github_token: ${{ secrets.CLOVER }}
