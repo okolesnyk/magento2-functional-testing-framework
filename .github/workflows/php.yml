@@ -46,6 +46,11 @@ jobs:
           threshold_alert: 10
           threshold_warning: 20
           
+      - name: ReportGenerator
+        uses: danielpalme/ReportGenerator-GitHub-Action@4.6.5
+        with:
+          reports: "clover.xml"
+          
   verification-tests:
     name: Verification Tests
     runs-on: ubuntu-latest
