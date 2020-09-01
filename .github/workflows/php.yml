@@ -38,7 +38,7 @@ jobs:
       - name: Monitor coverage
         uses: slavcodev/coverage-monitor-action@1.1.0
         with:
-          github_token: ${{ secrets.GITHUB_CLOVER }}
+          github_token: ${{ secrets.CLOVER }}
           clover_file: "clover.xml"
           threshold_alert: 10
           threshold_warning: 20
