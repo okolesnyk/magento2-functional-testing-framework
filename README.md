@@ -1,5 +1,3 @@
-Testing Github Application
-
 # Magento Functional Testing Framework (MFTF)
 
 
